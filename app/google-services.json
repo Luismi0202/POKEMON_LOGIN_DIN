@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "8098493586",
+    "project_id": "pokemonlgomdom",
+    "storage_bucket": "pokemonlgomdom.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8098493586:android:13719b1f2037988803224b",
+        "android_client_info": {
+          "package_name": "com.example.pokemon_login_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKO1UGYwzbh8Z-itSOuroMmcpvK0EAfnQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:8098493586:android:bd4a0d0bcd75b4bc03224b",
+        "android_client_info": {
+          "package_name": "com.example.pokemon_login_lgomdom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKO1UGYwzbh8Z-itSOuroMmcpvK0EAfnQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
