@@ -5,10 +5,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -204,10 +206,13 @@ fun PokemonCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(220.dp)
+            .height(240.dp)
             .clickable { onCardClick(pokemon) },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -223,7 +228,7 @@ fun PokemonCard(
                     contentDescription = pokemon.nombre,
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(8.dp),
+                        .padding(12.dp),
                     contentScale = ContentScale.Fit
                 )
 
@@ -231,34 +236,31 @@ fun PokemonCard(
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(4.dp)
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        IconButton(
+                        FloatingActionButton(
                             onClick = { onEditClick(pokemon) },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                            modifier = Modifier.size(40.dp),
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = Color.White
                         ) {
                             Icon(
                                 Icons.Default.Edit,
                                 contentDescription = "Editar",
-                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
 
-                        Spacer(modifier = Modifier.width(4.dp))
-
-                        IconButton(
+                        FloatingActionButton(
                             onClick = { onDeleteClick(pokemon) },
-                            modifier = Modifier
-                                .size(32.dp)
-                                .background(Color.White.copy(alpha = 0.8f), CircleShape)
+                            modifier = Modifier.size(40.dp),
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = Color.White
                         ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = "Eliminar",
-                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -269,20 +271,22 @@ fun PokemonCard(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(8.dp),
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = pokemon.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = pokemon.nombre.uppercase(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.horizontalScroll(rememberScrollState())
                 ) {
                     pokemon.tipos.forEach { tipo ->
                         TypeChip(tipo)
@@ -292,6 +296,7 @@ fun PokemonCard(
         }
     }
 }
+
 
 @Composable
 fun TypeChip(tipo: String) {
