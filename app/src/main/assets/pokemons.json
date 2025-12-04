@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "nombre": "Pikachu",
+    "descripcion": "Pokémon ratón eléctrico",
+    "tipos": ["ELÉCTRICO"],
+    "imagenUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png",
+    "habilidades": ["Electricidad estática"],
+    "wikiUrl": "https://www.pokemon.com/es/pokedex/pikachu"
+  },
+  {
+    "id": 2,
+    "nombre": "Charmander",
+    "descripcion": "Pokémon lagartija de fuego",
+    "tipos": ["FUEGO"],
+    "imagenUrl": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png",
+    "habilidades": ["Mar llamas"],
+    "wikiUrl": "https://www.pokemon.com/es/pokedex/charmander"
+  }
+]

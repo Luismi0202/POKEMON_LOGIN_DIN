@@ -1,4 +1,3 @@
-
 package com.example.pokemon_login_lgomdom.screens
 
 import android.content.Intent
@@ -62,28 +61,11 @@ fun PokedexScreen(
             TopAppBar(
                 title = { Text("Pokédex") },
                 actions = {
-                    if (currentUser.isAdmin) {
-                        IconButton(onClick = onNavigateToAdmin) {
-                            Icon(Icons.Default.Settings, contentDescription = "Panel Admin")
-                        }
+                    IconButton(onClick = onNavigateToAdmin) {
+                        Icon(Icons.Default.Settings, contentDescription = "Ajustes")
                     }
-                    IconButton(onClick = { showUserMenu = !showUserMenu }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Usuario")
-                    }
-                    DropdownMenu(
-                        expanded = showUserMenu,
-                        onDismissRequest = { showUserMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Cerrar Sesión") },
-                            onClick = {
-                                showUserMenu = false
-                                onLogout()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.ExitToApp, contentDescription = null)
-                            }
-                        )
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -107,11 +89,13 @@ fun PokedexScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Muestra indicador de carga mientras se obtienen los datos iniciales
             if (isLoading && pokemons.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
+                // Grid de 2 columnas con todos los pokémon
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     contentPadding = PaddingValues(16.dp),
@@ -138,7 +122,7 @@ fun PokedexScreen(
         }
     }
 
-    // Dialog para ver detalles del Pokémon
+    // Diálogo modal para ver detalles completos del pokémon seleccionado
     selectedPokemon?.let { pokemon ->
         PokemonDetailDialog(
             pokemon = pokemon,
@@ -146,19 +130,19 @@ fun PokedexScreen(
         )
     }
 
-    // Dialog para crear Pokémon
+    // Diálogo para crear un nuevo pokémon (solo admin)
     if (showCreateDialog) {
         PokemonFormDialog(
             pokemon = null,
             onDismiss = { showCreateDialog = false },
             onSave = { pokemon ->
-                pokemonViewModel.createPokemon(pokemon)
+                pokemonViewModel.addPokemon(pokemon)
                 showCreateDialog = false
             }
         )
     }
 
-    // Dialog para editar Pokémon
+    // Diálogo para editar un pokémon existente (solo admin)
     if (showEditDialog && pokemonToEdit != null) {
         PokemonFormDialog(
             pokemon = pokemonToEdit,
@@ -167,14 +151,14 @@ fun PokedexScreen(
                 pokemonToEdit = null
             },
             onSave = { pokemon ->
-                pokemonViewModel.updatePokemon(pokemonToEdit!!.id, pokemon)
+                pokemonViewModel.updatePokemon(pokemon)
                 showEditDialog = false
                 pokemonToEdit = null
             }
         )
     }
 
-    // Dialog para confirmar eliminación
+    // Diálogo de confirmación para eliminar un pokémon (solo admin)
     if (showDeleteDialog && pokemonToDelete != null) {
         AlertDialog(
             onDismissRequest = {

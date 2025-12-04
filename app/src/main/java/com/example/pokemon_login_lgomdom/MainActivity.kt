@@ -58,16 +58,20 @@ class MainActivity : ComponentActivity() {
             else -> "pokedex"
         }
 
+        // Configuración del grafo de navegación con todas las rutas de la aplicación
         NavHost(
             navController = navController,
             startDestination = startDestination
         ) {
+            // Ruta: Pantalla de inicio de sesión
             composable("login") {
                 LoginScreen(
                     authViewModel = authViewModel,
                     onLoginSuccess = {
+                        // Redirige según el rol del usuario: admin al panel de administración, otros a la pokédex
                         val destination = if (currentUser?.isAdmin == true) "admin" else "pokedex"
                         navController.navigate(destination) {
+                            // Limpia el back stack para evitar volver al login con el botón atrás
                             popUpTo("login") { inclusive = true }
                         }
                     },
@@ -80,10 +84,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // Ruta: Pantalla de registro de nuevos usuarios
             composable("register") {
                 RegisterScreen(
                     authViewModel = authViewModel,
                     onRegisterSuccess = {
+                        // Tras registro exitoso, lleva directamente a la pokédex
                         navController.navigate("pokedex") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -94,6 +100,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // Ruta: Pantalla de recuperación de contraseña
             composable("reset_password") {
                 ResetPasswordScreen(
                     authViewModel = authViewModel,
@@ -103,6 +110,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // Ruta: Panel de administración (solo accesible para usuarios admin)
             composable("admin") {
                 currentUser?.let { user ->
                     if (user.isAdmin) {
@@ -113,14 +121,16 @@ class MainActivity : ComponentActivity() {
                             },
                             onLogout = {
                                 authViewModel.logout()
+                                // Al hacer logout, vuelve al login y limpia todo el back stack
                                 navController.navigate("login") {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
                         )
                     } else {
+                        // Si un usuario sin permisos intenta acceder, se le redirige
                         LaunchedEffect(Unit) {
-                            Toast.makeText(context, "No eres administrador", Toast.LENGTH_SHORT)
+                            Toast.makeText(context, "no tienes permisos", Toast.LENGTH_SHORT)
                                 .show()
                             navController.navigate("pokedex") {
                                 popUpTo("admin") { inclusive = true }
@@ -130,18 +140,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
+            // Ruta: Pantalla principal de la pokédex (disponible para todos los usuarios autenticados)
             composable("pokedex") {
                 currentUser?.let { user ->
                     PokedexScreen(
                         pokemonViewModel = pokemonViewModel,
                         currentUser = user,
                         onNavigateToAdmin = {
+                            // Solo permite navegar al panel admin si el usuario tiene permisos
                             if (user.isAdmin) {
                                 navController.navigate("admin")
                             } else {
                                 Toast.makeText(
                                     context,
-                                    "No eres administrador y no puedes acceder",
+                                    "no tienes permisos",
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }

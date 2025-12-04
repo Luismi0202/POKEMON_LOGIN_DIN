@@ -19,30 +19,13 @@ fun AdminScreen(
     onNavigateToPokedex: () -> Unit,
     onLogout: () -> Unit
 ) {
-    var showUserMenu by remember { mutableStateOf(false) }
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Panel de Administración") },
                 actions = {
-                    IconButton(onClick = { showUserMenu = !showUserMenu }) {
-                        Icon(Icons.Default.AccountCircle, contentDescription = "Usuario")
-                    }
-                    DropdownMenu(
-                        expanded = showUserMenu,
-                        onDismissRequest = { showUserMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("Cerrar Sesión") },
-                            onClick = {
-                                showUserMenu = false
-                                onLogout()
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Default.ExitToApp, contentDescription = null)
-                            }
-                        )
+                    IconButton(onClick = onLogout) {
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Cerrar Sesión")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -59,6 +42,7 @@ fun AdminScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Tarjeta con información del perfil del administrador
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
@@ -70,6 +54,7 @@ fun AdminScreen(
                     modifier = Modifier.padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // Icono de usuario
                     Icon(
                         Icons.Default.AccountCircle,
                         contentDescription = null,
@@ -79,6 +64,7 @@ fun AdminScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Saludo personalizado con nombre del usuario
                     Text(
                         text = "Hola admin ${currentUser.nombre}",
                         style = MaterialTheme.typography.headlineMedium,
@@ -88,6 +74,7 @@ fun AdminScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
+                    // Email del usuario
                     Text(
                         text = currentUser.email,
                         style = MaterialTheme.typography.bodyMedium,
@@ -98,6 +85,7 @@ fun AdminScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Botón de acceso rápido a la Pokédex
             Button(
                 onClick = onNavigateToPokedex,
                 modifier = Modifier
