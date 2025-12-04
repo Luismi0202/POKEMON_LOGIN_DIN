@@ -62,6 +62,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-firestore-ktx") // <- agregar esto
 
     // Retrofit para llamadas a Render
     implementation("com.squareup.retrofit2:retrofit:2.9.0")

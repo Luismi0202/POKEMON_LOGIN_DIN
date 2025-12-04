@@ -27,7 +27,7 @@ interface PokemonApiService {
 }
 
 object RetrofitClient {
-    private const val BASE_URL = "https://pokemon-login-backend.onrender.com/"
+    private const val BASE_URL = "https://backend-pokemon-pm59.onrender.com/"
 
     val apiService: PokemonApiService by lazy {
         Retrofit.Builder()
