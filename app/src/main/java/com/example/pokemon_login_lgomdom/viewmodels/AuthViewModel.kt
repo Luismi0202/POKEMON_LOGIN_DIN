@@ -35,24 +35,46 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Loading
                 _errorMessage.value = null
 
+                // 1. Verificar si el usuario ya existe en la BD
+                try {
+                    RetrofitClient.apiService.getUser(email)
+                    // Si no lanza excepción, el usuario ya existe en la BD
+                    _errorMessage.value = "Este email ya está registrado en la base de datos."
+                    _authState.value = AuthState.Error("Este email ya está registrado en la base de datos.")
+                    return@launch
+                } catch (e: HttpException) {
+                    if (e.code() != 404) {
+                        // Error diferente a "no encontrado", propagar el error
+                        throw e
+                    }
+                    // 404 significa que no existe, podemos continuar
+                }
+
+                // 2. Crear usuario en Firebase Auth
                 auth.createUserWithEmailAndPassword(email, password).await()
 
+                // 3. Crear usuario en la BD (sin contraseña, isAdmin = false por defecto)
                 val createdUser = RetrofitClient.apiService.createUser(
                     User(email = email, nombre = nombre, isAdmin = false)
                 )
                 _currentUser.value = createdUser
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
-                // Rollback: eliminar usuario de Firebase
+                // Rollback mejorado: eliminar usuario de Firebase si falla la BD
                 try {
-                    auth.currentUser?.delete()?.await()
-                } catch (_: Exception) { }
+                    val currentFirebaseUser = auth.currentUser
+                    if (currentFirebaseUser != null && currentFirebaseUser.email == email) {
+                        currentFirebaseUser.delete().await()
+                    }
+                } catch (deleteError: Exception) {
+                    // Log del error de rollback, pero no lo mostramos al usuario
+                }
 
                 val msg = when (e) {
                     is HttpException -> when (e.code()) {
-                        400 -> "Error 400: Verifica el formato del body (${e.response()?.errorBody()?.string()})"
-                        409 -> "El email ya existe en la base de datos."
-                        else -> "Error del servidor: ${e.code()}"
+                        400 -> "Datos inválidos. Verifica el formato."
+                        409 -> "El email ya está registrado en la base de datos."
+                        else -> "Error del servidor (${e.code()})"
                     }
                     else -> translateError(e)
                 }
@@ -68,16 +90,23 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Loading
                 _errorMessage.value = null
 
+                // 1. Autenticar con Firebase
                 auth.signInWithEmailAndPassword(email, password).await()
 
+                // 2. Obtener datos del usuario desde la BD (incluyendo isAdmin)
                 val user = RetrofitClient.apiService.getUser(email)
                 _currentUser.value = user
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
+                // Si falla la consulta a la BD pero Firebase autenticó, cerrar sesión
+                if (auth.currentUser != null) {
+                    auth.signOut()
+                }
+
                 val msg = when (e) {
                     is HttpException -> {
                         if (e.code() == 404) "Usuario no encontrado en la base de datos."
-                        else "Error del servidor: ${e.code()}"
+                        else "Error del servidor (${e.code()})"
                     }
                     else -> translateError(e)
                 }
@@ -114,8 +143,8 @@ class AuthViewModel : ViewModel() {
     private fun translateError(e: Exception): String {
         val msg = e.message ?: "Error desconocido"
         return when {
-            msg.contains("timeout", true) -> "Error de conexión. Verifica tu internet o el backend."
-            msg.contains("email-already-in-use", true) -> "Este email ya está registrado en Firebase."
+            msg.contains("timeout", true) -> "Error de conexión. Verifica tu internet."
+            msg.contains("email-already-in-use", true) -> "Este email ya está registrado."
             msg.contains("weak-password", true) -> "La contraseña debe tener al menos 6 caracteres."
             msg.contains("invalid-email", true) -> "Email inválido."
             msg.contains("user-not-found", true) -> "Usuario no encontrado."
