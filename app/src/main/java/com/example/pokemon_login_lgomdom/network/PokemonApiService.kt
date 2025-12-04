@@ -2,9 +2,11 @@ package com.example.pokemon_login_lgomdom.network
 
 import com.example.pokemon_login_lgomdom.models.Pokemon
 import com.example.pokemon_login_lgomdom.models.User
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
+import java.util.concurrent.TimeUnit
 
 interface PokemonApiService {
     @GET("usuarios/{email}")
@@ -29,9 +31,16 @@ interface PokemonApiService {
 object RetrofitClient {
     private const val BASE_URL = "https://backend-pokemon-pm59.onrender.com/"
 
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
+
     val apiService: PokemonApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
+            .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(PokemonApiService::class.java)

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+
 class PokemonViewModel : ViewModel() {
     private val _pokemons = MutableStateFlow<List<Pokemon>>(emptyList())
     val pokemons: StateFlow<List<Pokemon>> = _pokemons
@@ -16,17 +17,24 @@ class PokemonViewModel : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    init {
-        loadPokemons()
-    }
+    private var lastLoadTime = 0L
+    private val CACHE_DURATION = 60_000L // 1 minuto
 
-    fun loadPokemons() {
+    fun loadPokemons(forceRefresh: Boolean = false) {
+        val currentTime = System.currentTimeMillis()
+        if (!forceRefresh &&
+            _pokemons.value.isNotEmpty() &&
+            currentTime - lastLoadTime < CACHE_DURATION) {
+            return // Usar caché
+        }
+
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _pokemons.value = RetrofitClient.apiService.getPokemons()
+                lastLoadTime = currentTime
             } catch (e: Exception) {
-                // Manejo de error
+                // Manejo de error - mantener lista actual si falla
             } finally {
                 _isLoading.value = false
             }
@@ -37,7 +45,7 @@ class PokemonViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 RetrofitClient.apiService.createPokemon(pokemon)
-                loadPokemons()
+                loadPokemons(forceRefresh = true)
             } catch (e: Exception) {
                 // Manejo de error
             }
@@ -48,7 +56,7 @@ class PokemonViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 RetrofitClient.apiService.updatePokemon(id, pokemon)
-                loadPokemons()
+                loadPokemons(forceRefresh = true)
             } catch (e: Exception) {
                 // Manejo de error
             }
@@ -59,7 +67,7 @@ class PokemonViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 RetrofitClient.apiService.deletePokemon(id)
-                loadPokemons()
+                loadPokemons(forceRefresh = true)
             } catch (e: Exception) {
                 // Manejo de error
             }

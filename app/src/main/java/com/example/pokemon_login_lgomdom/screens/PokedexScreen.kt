@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,13 +42,20 @@ fun PokedexScreen(
 ) {
     val pokemons by pokemonViewModel.pokemons.collectAsState()
     val isLoading by pokemonViewModel.isLoading.collectAsState()
-    var showUserMenu by remember { mutableStateOf(false) }
-    var selectedPokemon by remember { mutableStateOf<Pokemon?>(null) }
-    var showCreateDialog by remember { mutableStateOf(false) }
-    var showEditDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var showUserMenu by rememberSaveable { mutableStateOf(false) }
+    var selectedPokemon by rememberSaveable { mutableStateOf<Pokemon?>(null) }
+    var showCreateDialog by rememberSaveable { mutableStateOf(false) }
+    var showEditDialog by rememberSaveable { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var pokemonToEdit by remember { mutableStateOf<Pokemon?>(null) }
     var pokemonToDelete by remember { mutableStateOf<Pokemon?>(null) }
+
+    // Solo recargar si la lista está vacía
+    LaunchedEffect(Unit) {
+        if (pokemons.isEmpty()) {
+            pokemonViewModel.loadPokemons()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -94,7 +102,7 @@ fun PokedexScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            if (isLoading) {
+            if (isLoading && pokemons.isEmpty()) {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center)
                 )
@@ -105,7 +113,7 @@ fun PokedexScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    items(pokemons) { pokemon ->
+                    items(pokemons, key = { it.id }) { pokemon ->
                         PokemonCard(
                             pokemon = pokemon,
                             isAdmin = currentUser.isAdmin,

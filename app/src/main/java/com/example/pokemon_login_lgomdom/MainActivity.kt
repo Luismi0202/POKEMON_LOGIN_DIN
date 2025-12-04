@@ -1,15 +1,14 @@
-// MainActivity.kt
 package com.example.pokemon_login_lgomdom
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -21,6 +20,9 @@ import com.example.pokemon_login_lgomdom.viewmodels.AuthViewModel
 import com.example.pokemon_login_lgomdom.viewmodels.PokemonViewModel
 
 class MainActivity : ComponentActivity() {
+    private val authViewModel: AuthViewModel by viewModels()
+    private val pokemonViewModel: PokemonViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -29,7 +31,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    PokemonApp()
+                    PokemonApp(authViewModel, pokemonViewModel)
                 }
             }
         }
@@ -37,10 +39,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun PokemonApp() {
+fun PokemonApp(
+    authViewModel: AuthViewModel,
+    pokemonViewModel: PokemonViewModel
+) {
     val navController = rememberNavController()
-    val authViewModel: AuthViewModel = viewModel()
-    val pokemonViewModel: PokemonViewModel = viewModel()
     val currentUser by authViewModel.currentUser.collectAsState()
 
     val startDestination = if (currentUser != null) "pokedex" else "login"
