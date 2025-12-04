@@ -1,18 +1,16 @@
 package com.example.pokemon_login_lgomdom.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.pokemon_login_lgomdom.data.LocalUserRepository
 import com.example.pokemon_login_lgomdom.models.User
-import com.example.pokemon_login_lgomdom.network.RetrofitClient
-import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import retrofit2.HttpException
 
-class AuthViewModel : ViewModel() {
-    private val auth = FirebaseAuth.getInstance()
+class AuthViewModel(context: Context) : ViewModel() {
+    private val userRepository = LocalUserRepository(context)
 
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser
@@ -24,64 +22,10 @@ class AuthViewModel : ViewModel() {
     val errorMessage: StateFlow<String?> = _errorMessage
 
     fun clearError() { _errorMessage.value = null }
+
     fun setFormError(msg: String) {
         _errorMessage.value = msg
         _authState.value = AuthState.Error(msg)
-    }
-
-    fun register(email: String, password: String, nombre: String) {
-        viewModelScope.launch {
-            try {
-                _authState.value = AuthState.Loading
-                _errorMessage.value = null
-
-                // 1. Verificar si el usuario ya existe en la BD
-                try {
-                    RetrofitClient.apiService.getUser(email)
-                    // Si no lanza excepción, el usuario ya existe en la BD
-                    _errorMessage.value = "Este email ya está registrado en la base de datos."
-                    _authState.value = AuthState.Error("Este email ya está registrado en la base de datos.")
-                    return@launch
-                } catch (e: HttpException) {
-                    if (e.code() != 404) {
-                        // Error diferente a "no encontrado", propagar el error
-                        throw e
-                    }
-                    // 404 significa que no existe, podemos continuar
-                }
-
-                // 2. Crear usuario en Firebase Auth
-                auth.createUserWithEmailAndPassword(email, password).await()
-
-                // 3. Crear usuario en la BD (sin contraseña, isAdmin = false por defecto)
-                val createdUser = RetrofitClient.apiService.createUser(
-                    User(email = email, nombre = nombre, isAdmin = false)
-                )
-                _currentUser.value = createdUser
-                _authState.value = AuthState.Success
-            } catch (e: Exception) {
-                // Rollback mejorado: eliminar usuario de Firebase si falla la BD
-                try {
-                    val currentFirebaseUser = auth.currentUser
-                    if (currentFirebaseUser != null && currentFirebaseUser.email == email) {
-                        currentFirebaseUser.delete().await()
-                    }
-                } catch (deleteError: Exception) {
-                    // Log del error de rollback, pero no lo mostramos al usuario
-                }
-
-                val msg = when (e) {
-                    is HttpException -> when (e.code()) {
-                        400 -> "Datos inválidos. Verifica el formato."
-                        409 -> "El email ya está registrado en la base de datos."
-                        else -> "Error del servidor (${e.code()})"
-                    }
-                    else -> translateError(e)
-                }
-                _errorMessage.value = msg
-                _authState.value = AuthState.Error(msg)
-            }
-        }
     }
 
     fun login(email: String, password: String) {
@@ -90,26 +34,52 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Loading
                 _errorMessage.value = null
 
-                // 1. Autenticar con Firebase
-                auth.signInWithEmailAndPassword(email, password).await()
+                val localUser = userRepository.validateCredentials(email, password)
 
-                // 2. Obtener datos del usuario desde la BD (incluyendo isAdmin)
-                val user = RetrofitClient.apiService.getUser(email)
-                _currentUser.value = user
+                if (localUser != null) {
+                    _currentUser.value = User(
+                        id = localUser.id,
+                        email = localUser.email,
+                        nombre = localUser.nombre,
+                        isAdmin = localUser.isAdmin
+                    )
+                    _authState.value = AuthState.Success
+                } else {
+                    val msg = "Email o contraseña incorrectos"
+                    _errorMessage.value = msg
+                    _authState.value = AuthState.Error(msg)
+                }
+            } catch (e: Exception) {
+                val msg = "Error al iniciar sesión: ${e.message}"
+                _errorMessage.value = msg
+                _authState.value = AuthState.Error(msg)
+            }
+        }
+    }
+
+    fun register(email: String, password: String, nombre: String) {
+        viewModelScope.launch {
+            try {
+                _authState.value = AuthState.Loading
+                _errorMessage.value = null
+
+                if (userRepository.emailExists(email)) {
+                    val msg = "Este email ya está registrado"
+                    _errorMessage.value = msg
+                    _authState.value = AuthState.Error(msg)
+                    return@launch
+                }
+
+                // Crear usuario sin privilegios de admin
+                _currentUser.value = User(
+                    id = (userRepository.getUsers().maxOfOrNull { it.id } ?: 0) + 1,
+                    email = email,
+                    nombre = nombre,
+                    isAdmin = false
+                )
                 _authState.value = AuthState.Success
             } catch (e: Exception) {
-                // Si falla la consulta a la BD pero Firebase autenticó, cerrar sesión
-                if (auth.currentUser != null) {
-                    auth.signOut()
-                }
-
-                val msg = when (e) {
-                    is HttpException -> {
-                        if (e.code() == 404) "Usuario no encontrado en la base de datos."
-                        else "Error del servidor (${e.code()})"
-                    }
-                    else -> translateError(e)
-                }
+                val msg = "Error al registrarse: ${e.message}"
                 _errorMessage.value = msg
                 _authState.value = AuthState.Error(msg)
             }
@@ -122,11 +92,15 @@ class AuthViewModel : ViewModel() {
                 _authState.value = AuthState.Loading
                 _errorMessage.value = null
 
-                auth.sendPasswordResetEmail(email).await()
-
-                _authState.value = AuthState.PasswordResetSent
+                if (userRepository.emailExists(email)) {
+                    _authState.value = AuthState.PasswordResetSent
+                } else {
+                    val msg = "Usuario no encontrado"
+                    _errorMessage.value = msg
+                    _authState.value = AuthState.Error(msg)
+                }
             } catch (e: Exception) {
-                val msg = translateError(e)
+                val msg = "Error: ${e.message}"
                 _errorMessage.value = msg
                 _authState.value = AuthState.Error(msg)
             }
@@ -134,23 +108,9 @@ class AuthViewModel : ViewModel() {
     }
 
     fun logout() {
-        auth.signOut()
         _currentUser.value = null
         _authState.value = AuthState.Idle
         _errorMessage.value = null
-    }
-
-    private fun translateError(e: Exception): String {
-        val msg = e.message ?: "Error desconocido"
-        return when {
-            msg.contains("timeout", true) -> "Error de conexión. Verifica tu internet."
-            msg.contains("email-already-in-use", true) -> "Este email ya está registrado."
-            msg.contains("weak-password", true) -> "La contraseña debe tener al menos 6 caracteres."
-            msg.contains("invalid-email", true) -> "Email inválido."
-            msg.contains("user-not-found", true) -> "Usuario no encontrado."
-            msg.contains("wrong-password", true) -> "Contraseña incorrecta."
-            else -> "Error: $msg"
-        }
     }
 
     sealed class AuthState {

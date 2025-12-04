@@ -38,6 +38,7 @@ import com.example.pokemon_login_lgomdom.viewmodels.PokemonViewModel
 fun PokedexScreen(
     pokemonViewModel: PokemonViewModel,
     currentUser: User,
+    onNavigateToAdmin: () -> Unit,
     onLogout: () -> Unit
 ) {
     val pokemons by pokemonViewModel.pokemons.collectAsState()
@@ -50,7 +51,6 @@ fun PokedexScreen(
     var pokemonToEdit by remember { mutableStateOf<Pokemon?>(null) }
     var pokemonToDelete by remember { mutableStateOf<Pokemon?>(null) }
 
-    // Solo recargar si la lista está vacía
     LaunchedEffect(Unit) {
         if (pokemons.isEmpty()) {
             pokemonViewModel.loadPokemons()
@@ -62,6 +62,11 @@ fun PokedexScreen(
             TopAppBar(
                 title = { Text("Pokédex") },
                 actions = {
+                    if (currentUser.isAdmin) {
+                        IconButton(onClick = onNavigateToAdmin) {
+                            Icon(Icons.Default.Settings, contentDescription = "Panel Admin")
+                        }
+                    }
                     IconButton(onClick = { showUserMenu = !showUserMenu }) {
                         Icon(Icons.Default.AccountCircle, contentDescription = "Usuario")
                     }
