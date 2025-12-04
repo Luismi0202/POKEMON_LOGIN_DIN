@@ -1,4 +1,3 @@
-
 package com.example.pokemon_login_lgomdom.screens
 
 import androidx.compose.foundation.layout.*
@@ -33,7 +32,6 @@ fun RegisterScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     val authState by authViewModel.authState.collectAsState()
     val errorMessage by authViewModel.errorMessage.collectAsState()
@@ -93,11 +91,11 @@ fun RegisterScreen(
             leadingIcon = { Icon(Icons.Default.Lock, null) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
-                IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
-                    Icon(if (confirmPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility, null)
                 }
             }
         )
